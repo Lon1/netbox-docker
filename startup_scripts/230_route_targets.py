@@ -1,7 +1,12 @@
 import sys
 
 from ipam.models import RouteTarget
-from startup_script_utils import load_yaml, pop_custom_fields, set_custom_fields_values
+from startup_script_utils import (
+    load_yaml,
+    pop_custom_fields,
+    set_custom_fields_values,
+    split_params,
+)
 from tenancy.models import Tenant
 
 route_targets = load_yaml("/opt/netbox/initializers/route_targets.yml")
@@ -21,9 +26,10 @@ for params in route_targets:
 
             params[assoc] = model.objects.get(**query)
 
-    route_target, created = RouteTarget.objects.get_or_create(**params)
+    matching_params, defaults = split_params(params)
+    route_target, created = RouteTarget.objects.get_or_create(**matching_params, defaults=defaults)
 
     if created:
-        set_custom_fields_values(route_target, custom_field_data)
-
         print("🎯 Created Route Target", route_target.name)
+
+    set_custom_fields_values(route_target, custom_field_data)
